@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User, Group
+from wms_api.models import Package
 from rest_framework import serializers
 
 
@@ -12,3 +13,9 @@ class GroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Group
         fields = ['url', 'name']
+
+
+class PackageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Package
+        fields = ['id', 'packageType', 'qrCodeno', 'admitionDate', 'destination']
