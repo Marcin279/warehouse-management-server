@@ -9,7 +9,7 @@ Required Tools:
 
 Database settings is set in settings.py file
 
-## Instrukcja włączania aplikacji 
+## How to run App
 ### Libraries
 - asgiref==3.5.2
 - Django==4.1.3
@@ -40,16 +40,21 @@ Server is set to localhost:8080
 
 `python manage.py runserver` </br>
 
-
 ## Develop
 Making migration
 
 `python manage.py makemigrations`
 
-Migrate data
+### Migrate data
 
 `python manage.py migrate`
 
-Run app
+### Run app
 
 `python manage.py runserver`
+
+# Docker Version
+1. Clone Repo
+2. Create Container & Build dependencies `docker-compose up`
+3. To enter container`docker exec -it {container_id} bash`
+4. To rebuild container `docker-compose build {name}`
