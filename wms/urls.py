@@ -10,24 +10,25 @@ Class-based views
     1. Add an import:  from other_app.views import Home
     2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
 Including another URLconf
-    1. Import the include() function: from django.urls import include, path
+    1. Import the include function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import include, path
 from django.contrib import admin
 from rest_framework import routers
 from wms_api import views
-from wms_api.views import CartItemViews
 
 router = routers.DefaultRouter()
-router.register(r'users', views.UserViewSet)
-router.register(r'groups', views.GroupViewSet)
-
+# router.register(r'users', views.UserViewSet)
+# router.register(r'groups', views.GroupViewSet)
+router.register(r'package', views.PackageView)
+# router.register(r'address-details', views.AddressDetailsView)
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('admin', admin.site.urls),
+    path('accounts/', include("django.contrib.auth.urls")),
     path('', include(router.urls)),
-    path('test', views.endpoint1),
-    path('cart-items/', CartItemViews.as_view())
+    path('address-details/<int:pk>/', views.AddressDetailsViewDetails.as_view()),
+    path('address-details/', views.AddressDetailsView.as_view()),
 ]
