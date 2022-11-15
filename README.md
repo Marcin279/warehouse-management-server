@@ -25,6 +25,7 @@ Database settings is set in settings.py file
 
 ## Install libraries
 Use Python 3.10.0, 3.11 cause error with psycopg2 library
+
 `pip install requirements.txt`
 
 ## Prepare virtual environment
