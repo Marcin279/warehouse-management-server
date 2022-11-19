@@ -36,12 +36,12 @@ Use Python 3.10.0, 3.11 cause error with psycopg2 library
 `.\env_name\Scripts\activate`
 
 ## Run App
-Server is set to localhost:8080
+### Server is set to localhost:8080
 
 `python manage.py runserver` </br>
 
 ## Develop
-Making migration
+### Making migration
 
 `python manage.py makemigrations`
 

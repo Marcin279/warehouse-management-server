@@ -21,7 +21,7 @@ from wms_api import views
 router = routers.DefaultRouter()
 # router.register(r'users', views.UserViewSet)
 # router.register(r'groups', views.GroupViewSet)
-router.register(r'package', views.PackageView)
+# router.register(r'package', views.PackageView)
 # router.register(r'address-details', views.AddressDetailsView)
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
@@ -31,4 +31,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('address-details/<int:pk>/', views.AddressDetailsViewDetails.as_view()),
     path('address-details/', views.AddressDetailsView.as_view()),
+    path('package/', views.PackageView.as_view()),
 ]

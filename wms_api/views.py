@@ -62,18 +62,36 @@ class CartItemViews(APIView):
 """
 
 
-class PackageView(viewsets.ModelViewSet):
-    queryset = PackageModel.objects.all()
-    serializer_class = PackageSerializer
+# class PackageView(viewsets.ModelViewSet):
+#     queryset = PackageModel.objects.all()
+#     serializer_class = PackageSerializer
+#
+#     def get(self, request):
+#         return Response(self.serializer_class)
 
-    def get(self, request):
-        return Response(self.serializer_class)
+class PackageView(APIView):
+    """
+    List all address_details, or create a new address_details  .
+    """
+
+    def get(self, request, format=None):
+        address_details = PackageModel.objects.all()
+        serializer = PackageSerializer(address_details, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, format=None):
+        serializer = PackageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AddressDetailsView(APIView):
     """
     List all address_details, or create a new address_details  .
     """
+
     def get(self, request, format=None):
         address_details = AddressDetails.objects.all()
         serializer = AddressDetailsSerializer(address_details, many=True)
