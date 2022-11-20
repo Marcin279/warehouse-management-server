@@ -1,15 +1,23 @@
+import datetime
+import pytz
 from django.db import models
+from django.utils import timezone, functional
 
 
 # Create your models here.
+
 class PackageModel(models.Model):
     packageType = models.CharField(max_length=30)
     qrCodeno = models.URLField(max_length=255)
-    admitionDate = models.DateTimeField()
+    admitionDate = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     destination = models.IntegerField()
 
     def __str__(self):
         return {f"id={self.id}, packegeType={self.packageType}"}
+
+    @staticmethod
+    def generate_data(self):
+        return timezone.localtime(timezone.now()).strftime('%Y-%m-%dT%H:%M:%S')
 
 
 class Suppliers(models.Model):
