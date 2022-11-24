@@ -21,16 +21,16 @@ class Package(models.Model):
         (SEND, 'SEND')
     ]
 
-    packageType = models.CharField(max_length=30)
-    qrCodeno = models.URLField(max_length=255, default='https://www.google.pl/')  # TODO: Replace default by QR Code
+    package_type = models.CharField(max_length=30)
+    qr_code = models.URLField(max_length=255, default='https://www.google.pl/')  # TODO: Replace default by QR Code
 
     # genenerator
-    admitionDate = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    admition_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     destination = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=8, choices=PACKAGE_STATUS, default=PENDING)
 
     def __str__(self):
-        return self.packageType
+        return self.package_type
 
 
 class Product(models.Model):
@@ -42,12 +42,12 @@ class Product(models.Model):
     Product6 = 'P6'
 
     PRODUCT_TYPE = [
-        (Product1, 'Package1'),
-        (Product2, 'Package2'),
-        (Product3, 'Package3'),
-        (Product4, 'Package4'),
-        (Product5, 'Package5'),
-        (Product6, 'Package6')
+        (Product1, 'Product1'),
+        (Product2, 'Product2'),
+        (Product3, 'Product3'),
+        (Product4, 'Product4'),
+        (Product5, 'Product5'),
+        (Product6, 'Product6')
     ]
 
     package = models.ForeignKey(Package, related_name='products', on_delete=models.CASCADE, null=True)

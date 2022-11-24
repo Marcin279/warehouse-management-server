@@ -141,6 +141,10 @@ class ProductView(viewsets.ModelViewSet):
 
 
 class PackageProductView(viewsets.ModelViewSet):
+    """
+    Create new package and add existing
+
+    """
     serializer_class = PackageProductSerializer
 
     def get_queryset(self):
@@ -150,7 +154,7 @@ class PackageProductView(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data
 
-        new_package = Package.objects.create(packageType=data["packageType"],
+        new_package = Package.objects.create(package_type=data["package_type"],
                                              destination=data["destination"]
                                              )
 

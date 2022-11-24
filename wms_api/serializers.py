@@ -25,7 +25,7 @@ class AlbumSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ('product_type', 'category')
+        fields = '__all__'
 
 
 class PackageSerializer(serializers.ModelSerializer):
@@ -39,7 +39,7 @@ class PackageProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Package
-        fields = ('packageType', 'destination', 'products')
+        fields = ('package_type', 'destination', 'products')
         depth = 1
 
 
