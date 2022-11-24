@@ -1,80 +1,148 @@
-import datetime
-import pytz
 from django.db import models
-from django.utils import timezone, functional
+from django.utils import timezone
 
 
 # Create your models here.
 
-class PackageModel(models.Model):
+# class Category(models.Model):
+#     name = models.CharField(max_length=30)
+#
+
+class Package(models.Model):
+    REGISTER = 'R'
+    PENDING = 'P'
+    DONE = 'D'
+    SEND = 'S'
+
+    PACKAGE_STATUS = [
+        (REGISTER, 'Register'),
+        (PENDING, 'Pending'),
+        (DONE, 'DONE'),
+        (SEND, 'SEND')
+    ]
+
     packageType = models.CharField(max_length=30)
-    qrCodeno = models.URLField(max_length=255)
+    qrCodeno = models.URLField(max_length=255, default='https://www.google.pl/')  # TODO: Replace default by QR Code
+
+    # genenerator
     admitionDate = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    destination = models.IntegerField()
+    destination = models.IntegerField(null=True, blank=True)
+    status = models.CharField(max_length=8, choices=PACKAGE_STATUS, default=PENDING)
 
     def __str__(self):
-        return {f"id={self.id}, packegeType={self.packageType}"}
-
-    @staticmethod
-    def generate_data(self):
-        return timezone.localtime(timezone.now()).strftime('%Y-%m-%dT%H:%M:%S')
-
-
-class Suppliers(models.Model):
-    name = models.CharField(max_length=30)
-
-
-class AddressDetails(models.Model):
-    buildings_number = models.IntegerField(blank=True, null=True)
-    street = models.CharField(max_length=30)
-    postal_code = models.CharField(max_length=30)
-    city = models.CharField(max_length=30)
-    country = models.CharField(max_length=30)
-
-
-class User(models.Model):
-    login = models.CharField(max_length=30)
-    password = models.CharField(max_length=30)
-    name = models.CharField(max_length=30)
-    surname = models.CharField(max_length=30)
-    role = models.CharField(max_length=30)
-    address_details = models.ManyToManyField(AddressDetails)
-
-
-class Warehouse(models.Model):
-    address_details = models.ForeignKey(AddressDetails, on_delete=models.CASCADE)
-    id_suppliers = models.ForeignKey(Suppliers, on_delete=models.CASCADE)
-
-
-class WarehouseSummary(models.Model):
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
-
-
-class Category(models.Model):
-    name = models.CharField(max_length=30)
+        return self.packageType
 
 
 class Product(models.Model):
-    name = models.CharField(max_length=45)
-    QR_code = models.URLField(max_length=255)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    Product1 = 'P1'
+    Product2 = 'P2'
+    Product3 = 'P3'
+    Product4 = 'P4'
+    Product5 = 'P5'
+    Product6 = 'P6'
+
+    PRODUCT_TYPE = [
+        (Product1, 'Package1'),
+        (Product2, 'Package2'),
+        (Product3, 'Package3'),
+        (Product4, 'Package4'),
+        (Product5, 'Package5'),
+        (Product6, 'Package6')
+    ]
+
+    package = models.ForeignKey(Package, related_name='products', on_delete=models.CASCADE, null=True)
+    # package = models.ManyToManyField(Package)
+    product_type = models.CharField(max_length=45, choices=PRODUCT_TYPE, default=Product1)
+    QR_code = models.URLField(max_length=255, default="https://www.google.pl/")
+    category = models.CharField(max_length=30, default='Phones')
+
+    def __str__(self):
+        return self.product_type
 
 
-class ProductStock(models.Model):
-    quantity = models.IntegerField()
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+# class Suppliers(models.Model):
+#     name = models.CharField(max_length=30)
+#
+#
+# class AddressDetails(models.Model):
+#     buildings_number = models.IntegerField(blank=True, null=True)
+#     street = models.CharField(max_length=30)
+#     postal_code = models.CharField(max_length=30)
+#     city = models.CharField(max_length=30)
+#     country = models.CharField(max_length=30)
+#
+#
+# class User(models.Model):
+#     login = models.CharField(max_length=30)
+#     password = models.CharField(max_length=30)
+#     name = models.CharField(max_length=30)
+#     surname = models.CharField(max_length=30)
+#     role = models.CharField(max_length=30)
+#     address_details = models.ManyToManyField(AddressDetails)
+#
+#
+# class Warehouse(models.Model):
+#     address_details = models.ForeignKey(AddressDetails, on_delete=models.CASCADE)
+#     id_suppliers = models.ForeignKey(Suppliers, on_delete=models.CASCADE)
+#
+#
+# class WarehouseSummary(models.Model):
+#     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
+#
+#
+# # class ProductStock(models.Model):
+# #     quantity = models.IntegerField()
+# #     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
+# #     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+#
+#
+# class ProductOrder(models.Model):
+#     quantity = models.IntegerField()
+#     order = models.IntegerField()
+#     product = models.IntegerField()
+#
+#
+# class Order(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     user_address_details = models.ForeignKey(AddressDetails, on_delete=models.CASCADE)
+#     shipment_type = models.CharField(max_length=30)
+#     creation_date = models.DateTimeField()
+#     order_col = models.CharField(max_length=30)
 
 
-class ProductOrder(models.Model):
-    quantity = models.IntegerField()
-    order = models.IntegerField()
-    product = models.IntegerField()
+class Modules(models.Model):
+    module_name = models.CharField(max_length=50)
+    module_duaration = models.IntegerField()
+    class_room = models.IntegerField()
+
+    def __str__(self):
+        return self.module_name
 
 
-class Order(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    user_address_details = models.ForeignKey(AddressDetails, on_delete=models.CASCADE)
-    shipment_type = models.CharField(max_length=30)
-    creation_date = models.DateTimeField()
-    order_col = models.CharField(max_length=30)
+class Students(models.Model):
+    name = models.CharField(max_length=50)
+    age = models.IntegerField()
+    grade = models.IntegerField()
+    modules = models.ManyToManyField(Modules)
+
+    def __str__(self):
+        return self.name
+
+
+# class Product(models.Model):
+#     product_name = models.CharField(max_length=50)
+#     product_type = models.IntegerField()
+#     class_room = models.IntegerField()
+#
+#     def __str__(self):
+#         return self.product_name
+#
+#
+# class Package(models.Model):
+#     package_name = models.CharField(max_length=50)
+#     age = models.IntegerField(null=True)
+#     grade = models.IntegerField(null=True)
+#     product = models.ManyToManyField(Product)
+#
+#     def __str__(self):
+#         return self.package_name

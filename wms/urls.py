@@ -17,19 +17,18 @@ from django.urls import include, path
 from django.contrib import admin
 from rest_framework import routers
 from wms_api import views
+from wms_api.views import StudentsViewSet, ModulesViewSet
 
 router = routers.DefaultRouter()
-# router.register(r'users', views.UserViewSet)
-# router.register(r'groups', views.GroupViewSet)
-# router.register(r'package', views.PackageView)
-# router.register(r'address-details', views.AddressDetailsView)
-# Wire up our API using automatic URL routing.
-# Additionally, we include login URLs for the browsable API.
+router.register('product', views.ProductView, basename="product")
+router.register('package-product', views.PackageProductView, basename="package-product")
+router.register("student", StudentsViewSet, basename="student")
+router.register("module", ModulesViewSet, basename="module")
+
 urlpatterns = [
     path('admin', admin.site.urls),
     path('accounts/', include("django.contrib.auth.urls")),
     path('', include(router.urls)),
-    path('address-details/<int:pk>/', views.AddressDetailsViewDetails.as_view()),
-    path('address-details/', views.AddressDetailsView.as_view()),
-    path('package/', views.PackageView.as_view()),
+    # path('address-details/<int:pk>/', views.AddressDetailsViewDetails.as_view()),
+    # path('address-details/', views.AddressDetailsView.as_view()),
 ]
