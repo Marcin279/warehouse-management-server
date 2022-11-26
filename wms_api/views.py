@@ -162,7 +162,7 @@ class PackageProductView(viewsets.ModelViewSet):
         new_package.save()
 
         for product in data["products"]:
-            product_obj = Product.objects.get(product_type=product["product_name"])  # Fix: ERROR 500
+            product_obj = Product.objects.get(product_name=product["product_name"])  # Fix: ERROR 500
             # product_obj = get_object_or_404(Product,  product_type=product["product_type"])
             new_package.products.add(product_obj)
 
