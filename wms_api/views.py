@@ -124,7 +124,7 @@ class PackageView(viewsets.ModelViewSet):
         for product_store in data["product_store"]:
             product_received = product_store["product"]["product_name"]
             product_obj = Product.objects.get(product_name=product_received)  # Fix: ERROR 500
-            new_package.products.add(product_obj, through_defaults={"quantity": 3})
+            new_package.products.add(product_obj, through_defaults={"quantity": product_store["quantity"]})
 
         serializer = PackageSerializer(data=new_package)
         if serializer.is_valid():
