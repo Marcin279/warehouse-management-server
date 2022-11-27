@@ -7,6 +7,32 @@ class Category(models.Model):
     name = models.CharField(max_length=30)
 
 
+class Product(models.Model):
+    Product1 = 'P1'
+    Product2 = 'P2'
+    Product3 = 'P3'
+    Product4 = 'P4'
+    Product5 = 'P5'
+    Product6 = 'P6'
+
+    PRODUCT_TYPE = [
+        (Product1, 'Product1'),
+        (Product2, 'Product2'),
+        (Product3, 'Product3'),
+        (Product4, 'Product4'),
+        (Product5, 'Product5'),
+        (Product6, 'Product6')
+    ]
+
+    product_name = models.CharField(max_length=45)
+    product_type = models.CharField(max_length=10, choices=PRODUCT_TYPE, default=Product1)
+    QR_code = models.URLField(max_length=255, default="https://www.google.pl/")
+    category = models.CharField(max_length=30, default='Phones')
+
+    def __str__(self):
+        return self.product_type
+
+
 class Package(models.Model):
     REGISTER = 'R'
     PENDING = 'P'
@@ -28,37 +54,17 @@ class Package(models.Model):
     admition_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     destination = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=8, choices=PACKAGE_STATUS, default=PENDING)
+    products = models.ManyToManyField(Product, through='ProductStore')
 
     def __str__(self):
         return self.package_type
 
 
-class Product(models.Model):
-    Product1 = 'P1'
-    Product2 = 'P2'
-    Product3 = 'P3'
-    Product4 = 'P4'
-    Product5 = 'P5'
-    Product6 = 'P6'
-
-    PRODUCT_TYPE = [
-        (Product1, 'Product1'),
-        (Product2, 'Product2'),
-        (Product3, 'Product3'),
-        (Product4, 'Product4'),
-        (Product5, 'Product5'),
-        (Product6, 'Product6')
-    ]
-
-    # package = models.ManyToManyField(Package)
-    product_name = models.CharField(max_length=45)
-    product_type = models.CharField(max_length=10, choices=PRODUCT_TYPE, default=Product1)
-    QR_code = models.URLField(max_length=255, default="https://www.google.pl/")
-    category = models.CharField(max_length=30, default='Phones')
-    package = models.ForeignKey(Package, related_name='products', on_delete=models.CASCADE, null=True, blank=True)
-
-    def __str__(self):
-        return self.product_type
+class ProductStore(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    package = models.ForeignKey(Package, on_delete=models.CASCADE)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    quantity = models.PositiveIntegerField(blank=True, null=True)
 
 
 class Suppliers(models.Model):

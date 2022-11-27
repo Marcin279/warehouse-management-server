@@ -9,7 +9,7 @@ from wms_api.models import (Package,
                             WarehouseSummary,
                             ProductStock,
                             ProductOrder,
-                            Order, Category)
+                            Order, Category, ProductStore)
 
 from rest_framework import serializers
 
@@ -17,31 +17,23 @@ from rest_framework import serializers
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = ('product_name', 'product_type', 'QR_code', 'category')
+
+
+class ProductStoreSerializer(serializers.ModelSerializer):
+    product = ProductSerializer()
+
+    class Meta:
+        model = ProductStore
+        fields = ['product', 'date_creation', 'quantity']
 
 
 class PackageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Package
-        fields = ('package_type', 'qr_code', 'admition_date', 'destination', 'status')
-
-
-class PackageProductSerializer(serializers.ModelSerializer):
-    products = ProductSerializer(many=True, allow_null=True)  # Allow to null value in field
+    product_store = ProductStoreSerializer(many=True, source='productstore_set')
 
     class Meta:
         model = Package
-        fields = ('package_type', 'destination', 'admition_date', 'products')
-        depth = 1
-
-
-class PackageCreateSerializer(serializers.ModelSerializer):
-    product = ProductSerializer(many=True)
-    package = PackageProductSerializer()
-
-    class Meta:
-        model = Package
-        fields = ('product', 'package',)
+        fields = ('package_type', 'qr_code', 'admition_date', 'destination', 'status', 'product_store')
 
 
 class AddressDetailsSerializer(serializers.ModelSerializer):

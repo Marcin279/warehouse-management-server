@@ -5,10 +5,11 @@ from rest_framework.views import APIView
 
 from wms_api.models import (Product,
                             Package,
+                            ProductStore,
                             Students,
                             Modules,
                             AddressDetails)
-from wms_api.serializers import (PackageProductSerializer,
+from wms_api.serializers import (
                                  ProductSerializer,
                                  PackageSerializer,
                                  ModulesSerializer,
@@ -17,25 +18,25 @@ from wms_api.serializers import (PackageProductSerializer,
                                  )
 
 
-class PackageView(APIView):
-    """
-    List all address_details, or create a new address_details  .
-    """
-
-    def get(self, format=None):
-        product = Package.objects.all()
-        serializer = PackageSerializer(product, many=True)
-        return Response(serializer.data)
-
-    def post(self, request, format=None):
-        serializer = PackageSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.validated_data['qrCodeno'] = "https://www.valentinog.com/blog/drf-request/"
-            serializer.save()
-            # self.perform_create(serializer) # ViewSet
-            # headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# class PackageView(APIView):
+#     """
+#     List all address_details, or create a new address_details  .
+#     """
+#
+#     def get(self, format=None):
+#         product = Package.objects.all()
+#         serializer = PackageSerializer(product, many=True)
+#         return Response(serializer.data)
+#
+#     def post(self, request, format=None):
+#         serializer = PackageSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.validated_data['qrCodeno'] = "https://www.valentinog.com/blog/drf-request/"
+#             serializer.save()
+#             # self.perform_create(serializer) # ViewSet
+#             # headers = self.get_success_headers(serializer.data)
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AddressDetailsView(APIView):
@@ -83,47 +84,6 @@ class AddressDetailsViewDetails(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-## =============================================================================================
-
-# class PackageProductView(APIView):
-#     def get(self, request, format=None):
-#         package = Package.objects.all()
-#         serializer = PackageProductSerializer(package, many=True)
-#         return Response(serializer.data)
-#
-#     def post(self, request, *args, **kwargs):
-#         data = request.data
-#
-#         new_package = Package.objects.create(packageType=data["packageType"],
-#                                              destination=data["destination"],
-#                                              status=data["status"])
-#
-#         new_package.save()
-#
-#         for product in data["products"]:
-#             product_obj = Package.objects.get(product_type=product["product_type"])
-#             new_package.products.add(product_obj)
-#
-#         serializer = PackageProductSerializer(data=new_package)
-#         # if serializer.is_valid():
-#         #     serializer.save()
-#         #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-# class ProductView(viewsets.ModelViewSet):
-#     """
-#     List all address_details, or create a new address_details  .
-#     """
-#     serializer_class = ProductSerializer
-#
-#     def get_queryset(self):
-#         product = Product.objects.all()
-#         serializer = PackageProductSerializer(product, many=True)
-#         return Response(serializer.data)
-## =============================================================================================
-
 class ProductView(viewsets.ModelViewSet):
     queryset = Package.objects.all()
     serializer_class = ProductSerializer
@@ -140,13 +100,13 @@ class ProductView(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class PackageProductView(viewsets.ModelViewSet):
+class PackageView(viewsets.ModelViewSet):
     """
     Create new package and add existing
     product/package
-
     """
-    serializer_class = PackageProductSerializer
+
+    serializer_class = PackageSerializer
 
     def get_queryset(self):
         package = Package.objects.all()
@@ -161,12 +121,12 @@ class PackageProductView(viewsets.ModelViewSet):
 
         new_package.save()
 
-        for product in data["products"]:
-            product_obj = Product.objects.get(product_name=product["product_name"])  # Fix: ERROR 500
-            # product_obj = get_object_or_404(Product,  product_type=product["product_type"])
-            new_package.products.add(product_obj)
+        for product_store in data["product_store"]:
+            product_received = product_store["product"]["product_name"]
+            product_obj = Product.objects.get(product_name=product_received)  # Fix: ERROR 500
+            new_package.products.add(product_obj, through_defaults={"quantity": 3})
 
-        serializer = PackageProductSerializer(data=new_package)
+        serializer = PackageSerializer(data=new_package)
         if serializer.is_valid():
             return Response(serializer.data)
         else:
