@@ -1,3 +1,5 @@
+import datetime
+
 from django.http import Http404
 from rest_framework import status, viewsets
 from rest_framework.response import Response
@@ -8,14 +10,14 @@ from wms_api.models import (Product,
                             ProductStore,
                             Students,
                             Modules,
-                            AddressDetails)
+                            ShipmentDetails)
 from wms_api.serializers import (
-                                 ProductSerializer,
-                                 PackageSerializer,
-                                 ModulesSerializer,
-                                 StudentsSerializer,
-                                 AddressDetailsSerializer
-                                 )
+    ProductSerializer,
+    PackageSerializer,
+    ModulesSerializer,
+    StudentsSerializer,
+    AddressDetailsSerializer
+)
 
 
 # class PackageView(APIView):
@@ -45,7 +47,7 @@ class AddressDetailsView(APIView):
     """
 
     def get(self, request, format=None):
-        address_details = AddressDetails.objects.all()
+        address_details = ShipmentDetails.objects.all()
         serializer = AddressDetailsSerializer(address_details, many=True)
         return Response(serializer.data)
 
@@ -61,8 +63,8 @@ class AddressDetailsView(APIView):
 class AddressDetailsViewDetails(APIView):
     def get_object(self, pk):
         try:
-            return AddressDetails.objects.get(pk=pk)
-        except AddressDetails.DoesNotExist:
+            return ShipmentDetails.objects.get(pk=pk)
+        except ShipmentDetails.DoesNotExist:
             raise Http404
 
     def get(self, request, pk, format=None):
@@ -93,7 +95,7 @@ class ProductView(viewsets.ModelViewSet):
         return Product.objects.all()
 
     def create(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
+        serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -127,6 +129,29 @@ class PackageView(viewsets.ModelViewSet):
             new_package.products.add(product_obj, through_defaults={"quantity": product_store["quantity"]})
 
         serializer = PackageSerializer(data=new_package)
+        if serializer.is_valid():
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors)
+
+    def partial_update(self, request, *args, **kwargs):
+        package_obj = self.get_object()
+        data = request.data
+
+        try:
+            for product_store in data["product_store"]:
+                product_received = product_store["product"]["product_name"]
+                product_obj = Product.objects.get(product_name=product_received)  # Fix: ERROR 500
+                package_obj.products.add(product_obj, through_defaults={"quantity": product_store["quantity"]})
+        except KeyError:
+            pass
+
+        package_obj.destination = data.get("destination", package_obj.destination)
+        package_obj.admition_date = datetime.datetime.now()
+        package_obj.status = data.get("status", package_obj.status)
+
+        package_obj.save()
+        serializer = PackageSerializer(data=package_obj)
         if serializer.is_valid():
             return Response(serializer.data)
         else:
