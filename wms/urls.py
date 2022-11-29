@@ -29,7 +29,7 @@ urlpatterns = [
     path('admin', admin.site.urls),
     path('accounts/', include("django.contrib.auth.urls")),
     path('', include(router.urls)),
-    path('address-details/<int:pk>/', views.AddressDetailsViewDetails.as_view()),
-    path('address-details/', views.AddressDetailsView.as_view()),
+    # path('address-details/<int:pk>/', views.AddressDetailsViewDetails.as_view()),
+    # path('address-details/', views.AddressDetailsView.as_view()),
     # path('package/', views.PackageView.as_view())
 ]
