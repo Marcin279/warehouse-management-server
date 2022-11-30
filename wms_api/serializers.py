@@ -11,33 +11,39 @@ from wms_api.models import (Package,
 
 from rest_framework import serializers
 
+import datetime
+
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ('id', 'product_name', 'product_type', 'QR_code', 'category')
+        fields = ('product_name', 'product_type', 'QR_code', 'category')
 
 
 class ProductStoreSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
+    date_creation = serializers.DateTimeField(default=datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
 
     class Meta:
         model = ProductStore
         fields = ['product', 'date_creation', 'quantity']
 
 
+class ShipmentDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShipmentDetails
+        fields = ('id', 'shipment_name', 'buildings_number', 'street', 'postal_code', 'city',
+                  'country', 'total_weight')
+
+
 class PackageSerializer(serializers.ModelSerializer):
     product_store = ProductStoreSerializer(many=True, source='productstore_set')
+    addition_date = serializers.DateTimeField(default=datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
 
     class Meta:
         model = Package
-        fields = ('id', 'package_type', 'qr_code', 'admition_date', 'destination', 'status', 'product_store')
-
-
-class AddressDetailsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ShipmentDetails
-        fields = '__all__'
+        fields = ('id', 'package_name', 'package_type', 'qr_code', 'addition_date', 'sector', 'status',
+                  'product_store', 'shipment_details')
 
 
 class UserSerializer(serializers.ModelSerializer):

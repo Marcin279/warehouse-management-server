@@ -23,13 +23,14 @@ router = routers.DefaultRouter()
 router.register('product', views.ProductView, basename="product")
 router.register('package/product', views.PackageView, basename="package/product")
 router.register("student", StudentsViewSet, basename="student")
+router.register("shipment", views.ShipmentDetailsView, basename="shipment")
 router.register("module", ModulesViewSet, basename="module")
 
 urlpatterns = [
     path('admin', admin.site.urls),
     path('accounts/', include("django.contrib.auth.urls")),
     path('', include(router.urls)),
-    # path('address-details/<int:pk>/', views.AddressDetailsViewDetails.as_view()),
-    # path('address-details/', views.AddressDetailsView.as_view()),
+    # path('shipment-details/<int:pk>/', views.ShipmentDetailsViewDetails.as_view()),
+    # path('shipment-details/', views.ShipmentDetailsView.as_view()),
     # path('package/', views.PackageView.as_view())
 ]

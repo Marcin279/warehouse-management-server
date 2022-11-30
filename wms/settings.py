@@ -129,6 +129,8 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Europe/Warsaw'
 
+DATETIME_FORMAT = '%d-%m-%Y %H:%M:%S'
+
 USE_I18N = True
 
 USE_TZ = True
