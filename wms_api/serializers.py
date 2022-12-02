@@ -1,8 +1,6 @@
-# from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group
 from wms_api.models import (Package,
                             Product,
-                            Modules,
-                            Students,
                             ShipmentDetails,
                             Warehouse,
                             Worker,
@@ -14,6 +12,22 @@ from rest_framework import serializers
 import datetime
 
 
+class UserSerializer(serializers.ModelSerializer):
+    workers = serializers.PrimaryKeyRelatedField(many=True, queryset=Worker.objects.all())
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'workers']
+
+
+# class WorkerSerializer(serializers.ModelSerializer):
+#     workers = serializers.PrimaryKeyRelatedField(many=True, queryset=Worker.objects.all())
+#
+#     class Meta:
+#         model = User
+#         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'workers']
+
+
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
@@ -21,7 +35,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ProductStoreSerializer(serializers.ModelSerializer):
-    product = ProductSerializer()
+    product = ProductSerializer()  # TODO: DELETE
     date_creation = serializers.DateTimeField(default=datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
 
     class Meta:
@@ -46,10 +60,12 @@ class PackageSerializer(serializers.ModelSerializer):
                   'product_store', 'shipment_details')
 
 
-class UserSerializer(serializers.ModelSerializer):
+class AllPackageInOneShipmentSerializer(serializers.ModelSerializer):
+    addition_date = serializers.DateTimeField(default=datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
+
     class Meta:
-        model = Worker
-        fields = '__all__'
+        model = Package
+        fields = ('id', 'package_name', 'package_type', 'qr_code', 'addition_date', 'sector', 'status')
 
 
 class WarehouseSerializer(serializers.ModelSerializer):
@@ -62,18 +78,3 @@ class ProductStockSerializer(serializers.ModelSerializer):
     class Meta:
         model = WarehouseStock
         fields = '__all__'
-
-
-# ======================================================================
-# Examples
-class ModulesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Modules
-        fields = ['id', 'module_name', 'module_duration', 'class_room']
-
-
-class StudentsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Students
-        fields = ['id', 'name', 'age', 'grade', 'modules']
-        depth = 1

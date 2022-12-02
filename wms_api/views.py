@@ -1,22 +1,19 @@
 import datetime
-
+from django.contrib.auth.models import User
 from django.http import Http404
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, generics, serializers
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from wms_api.models import (Product,
                             Package,
                             ProductStore,
-                            Students,
-                            Modules,
                             ShipmentDetails)
 from wms_api.serializers import (
     ProductSerializer,
     PackageSerializer,
-    ModulesSerializer,
-    StudentsSerializer,
-    ShipmentDetailsSerializer
+    ShipmentDetailsSerializer, UserSerializer, AllPackageInOneShipmentSerializer
 )
 
 
@@ -122,18 +119,17 @@ class PackageView(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data
 
-        new_package = Package.objects.create(package_type=data["package_type"],
+        new_package = Package.objects.create(package_name=data["package_name"],
+                                             package_type=data["package_type"],
                                              sector=data["sector"],
-                                             shipment_details=ShipmentDetails.objects.get(shipment_name=data["shipment_name"])
+                                             shipment_details=ShipmentDetails.objects.get(
+                                                 shipment_name=data["shipment_name"])
                                              )
 
         for product_store in data["product_store"]:
-            product_received = product_store["product"]["product_name"]
+            product_received = product_store["product_name"]
             product_obj = Product.objects.get(product_name=product_received)
             new_package.products.add(product_obj, through_defaults={"quantity": product_store["quantity"]})
-
-        # shipment_address = ShipmentDetails.objects.get(shipment_name=data["shipment_name"])
-        # new_package.package_details.add(shipment_address)
 
         new_package.save()
         serializer = PackageSerializer(data=new_package)
@@ -166,35 +162,30 @@ class PackageView(viewsets.ModelViewSet):
             return Response(serializer.errors)
 
 
-# ===========================================================================================
-# Examples
-class StudentsViewSet(viewsets.ModelViewSet):
-    serializer_class = StudentsSerializer
-
-    def get_queryset(self):
-        student = Students.objects.all()
-        return student
-
-    def create(self, request, *args, **kwargs):
-        data = request.data
-
-        new_student = Students.objects.create(
-            name=data["name"], age=data['age'], grade=data["grade"])
-
-        new_student.save()
-
-        for module in data["modules"]:
-            module_obj = Modules.objects.get(module_name=module["module_name"])
-            new_student.modules.add(module_obj)
-
-        serializer = StudentsSerializer(new_student)
-
-        return Response(serializer.data)
+class WorkerList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    # permission_classes = [IsAdminUser]
 
 
-class ModulesViewSet(viewsets.ModelViewSet):
-    serializer_class = ModulesSerializer
+class WorkerDetails(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
-    def get_queryset(self):
-        module = Modules.objects.all()
-        return module
+
+class AllPackageInOneShipmentView(APIView):
+    def get_object(self, pk):
+        try:
+            return ShipmentDetails.objects.get(pk=pk)
+        except ShipmentDetails.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        shipment_obj = self.get_object(pk=pk)
+        shipment = shipment_obj.package_details.all()
+        serializer = AllPackageInOneShipmentSerializer(data=list(shipment), many=True)
+
+        if serializer.is_valid():
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)

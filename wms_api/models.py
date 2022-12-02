@@ -1,5 +1,5 @@
 import string
-
+from django.contrib.auth.models import User
 from django.db import models
 import random
 
@@ -77,7 +77,7 @@ class Package(models.Model):
                                          null=True)
 
     def __str__(self):
-        return self.package_type
+        return self.package_name
 
 
 class ProductStore(models.Model):
@@ -88,39 +88,17 @@ class ProductStore(models.Model):
 
 
 class Worker(models.Model):
-    login = models.CharField(max_length=30)
-    password = models.CharField(max_length=30)
-    name = models.CharField(max_length=30)
-    surname = models.CharField(max_length=30)
-    role = models.CharField(max_length=30)
+    owner = models.ForeignKey('auth.User', related_name='workers', on_delete=models.CASCADE)
+    role = models.CharField(max_length=30, null=True, blank=True)
 
 
 class Warehouse(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE)
     warehouse_name = models.CharField(max_length=15)
+    products = models.ManyToManyField(Product, through='WarehouseStock')
 
 
 class WarehouseStock(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     product_quantity = models.IntegerField()
-
-
-# ============================EXAMPLES===========================================================
-class Modules(models.Model):
-    module_name = models.CharField(max_length=50)
-    module_duaration = models.IntegerField()
-    class_room = models.IntegerField()
-
-    def __str__(self):
-        return self.module_name
-
-
-class Students(models.Model):
-    name = models.CharField(max_length=50)
-    age = models.IntegerField()
-    grade = models.IntegerField()
-    modules = models.ManyToManyField(Modules)
-
-    def __str__(self):
-        return self.name
