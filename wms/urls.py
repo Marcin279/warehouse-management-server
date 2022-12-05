@@ -19,17 +19,17 @@ from rest_framework import routers
 from wms_api import views
 
 router = routers.DefaultRouter()
-# router.register(r'users', views.UserViewSet)
-# router.register(r'groups', views.GroupViewSet)
-# router.register(r'package', views.PackageView)
-# router.register(r'address-details', views.AddressDetailsView)
-# Wire up our API using automatic URL routing.
-# Additionally, we include login URLs for the browsable API.
+router.register('product', views.ProductView, basename="product")
+router.register('package/product', views.PackageView, basename="package/product")
+router.register("shipment", views.ShipmentDetailsView, basename="shipment")
+
 urlpatterns = [
     path('admin', admin.site.urls),
     path('accounts/', include("django.contrib.auth.urls")),
     path('', include(router.urls)),
-    path('address-details/<int:pk>/', views.AddressDetailsViewDetails.as_view()),
-    path('address-details/', views.AddressDetailsView.as_view()),
-    path('package/', views.PackageView.as_view()),
+    path('users/', views.WorkerList.as_view()),
+    path('users/<int:pk>/', views.WorkerDetails.as_view()),
+    path('shipment-details/<int:pk>/', views.AllPackageInOneShipmentView.as_view()),
+    # path('shipment-details/', views.ShipmentDetailsView.as_view()),
+    # path('package/', views.PackageView.as_view())
 ]
