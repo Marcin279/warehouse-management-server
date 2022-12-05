@@ -1,16 +1,35 @@
+import string
+from django.contrib.auth.models import User
 from django.db import models
+import random
 
 
 # Create your models here.
+def generate_package_name():
+    letters = string.ascii_lowercase
+    return "Package" + "".join(random.choice(letters) for _ in range(10))
+
+
+class ShipmentDetails(models.Model):
+    shipment_name = models.CharField(max_length=50)
+    buildings_number = models.IntegerField(blank=True, null=True)
+    street = models.CharField(max_length=30)
+    postal_code = models.CharField(max_length=30)
+    city = models.CharField(max_length=30)
+    country = models.CharField(max_length=30)
+    total_weight = models.IntegerField(blank=True, null=True)
+
+    def __str__(self):
+        return self.shipment_name
 
 
 class Product(models.Model):
-    Product1 = 'P1'
-    Product2 = 'P2'
-    Product3 = 'P3'
-    Product4 = 'P4'
-    Product5 = 'P5'
-    Product6 = 'P6'
+    Product1 = 'Product1'
+    Product2 = 'Product2'
+    Product3 = 'Product3'
+    Product4 = 'Product4'
+    Product5 = 'Product5'
+    Product6 = 'Product6'
 
     PRODUCT_TYPE = [
         (Product1, 'Product1'),
@@ -44,17 +63,21 @@ class Package(models.Model):
     ]
 
     # Lista paczek
+    package_name = models.CharField(max_length=100,
+                                    default="Smartphones")
     package_type = models.CharField(max_length=30)
     qr_code = models.URLField(max_length=255, default='https://www.google.pl/')  # TODO: Replace default by QR Code
 
     # genenerator
-    admition_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-    destination = models.IntegerField(null=True, blank=True)
+    addition_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    sector = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=8, choices=PACKAGE_STATUS, default=PENDING)
     products = models.ManyToManyField(Product, through='ProductStore')
+    shipment_details = models.ForeignKey(ShipmentDetails, related_name='package_details', on_delete=models.SET_NULL,
+                                         null=True)
 
     def __str__(self):
-        return self.package_type
+        return self.package_name
 
 
 class ProductStore(models.Model):
@@ -64,49 +87,18 @@ class ProductStore(models.Model):
     quantity = models.PositiveIntegerField(blank=True, null=True)
 
 
-class ShipmentDetails(models.Model):
-    buildings_number = models.IntegerField(blank=True, null=True)
-    street = models.CharField(max_length=30)
-    postal_code = models.CharField(max_length=30)
-    city = models.CharField(max_length=30)
-    country = models.CharField(max_length=30)
-    total_weight = models.IntegerField(blank=True, null=True)
-
-
 class Worker(models.Model):
-    login = models.CharField(max_length=30)
-    password = models.CharField(max_length=30)
-    name = models.CharField(max_length=30)
-    surname = models.CharField(max_length=30)
-    role = models.CharField(max_length=30)
-    address_details = models.ManyToManyField(ShipmentDetails)
+    owner = models.ForeignKey('auth.User', related_name='workers', on_delete=models.CASCADE)
+    role = models.CharField(max_length=30, null=True, blank=True)
 
 
 class Warehouse(models.Model):
-    address_details = models.ForeignKey(ShipmentDetails, on_delete=models.CASCADE)
+    worker = models.ForeignKey(Worker, on_delete=models.CASCADE)
+    warehouse_name = models.CharField(max_length=15)
+    products = models.ManyToManyField(Product, through='WarehouseStock')
 
 
 class WarehouseStock(models.Model):
-    quantity = models.IntegerField()
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-
-# ============================EXAMPLES===========================================================
-class Modules(models.Model):
-    module_name = models.CharField(max_length=50)
-    module_duaration = models.IntegerField()
-    class_room = models.IntegerField()
-
-    def __str__(self):
-        return self.module_name
-
-
-class Students(models.Model):
-    name = models.CharField(max_length=50)
-    age = models.IntegerField()
-    grade = models.IntegerField()
-    modules = models.ManyToManyField(Modules)
-
-    def __str__(self):
-        return self.name
+    product_quantity = models.IntegerField()

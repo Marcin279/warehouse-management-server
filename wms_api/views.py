@@ -1,22 +1,19 @@
 import datetime
-
+from django.contrib.auth.models import User
 from django.http import Http404
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, generics, serializers
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from wms_api.models import (Product,
                             Package,
                             ProductStore,
-                            Students,
-                            Modules,
                             ShipmentDetails)
 from wms_api.serializers import (
     ProductSerializer,
     PackageSerializer,
-    ModulesSerializer,
-    StudentsSerializer,
-    AddressDetailsSerializer
+    ShipmentDetailsSerializer, UserSerializer, AllPackageInOneShipmentSerializer
 )
 
 
@@ -41,58 +38,63 @@ from wms_api.serializers import (
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class AddressDetailsView(APIView):
-    """
-    List all address_details, or create a new address_details  .
-    """
+# class ShipmentDetailsView(APIView):
+#     """
+#     List all address_details, or create a new address_details  .
+#     """
+#
+#     def get(self, request, format=None):
+#         address_details = ShipmentDetails.objects.all()
+#         serializer = ShipmentDetailsSerializer(address_details, many=True)
+#         return Response(serializer.data)
+#
+#     def post(self, request, format=None):
+#         serializer = ShipmentDetailsSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#
+# class ShipmentDetailsViewDetails(APIView):
+#     def get_object(self, pk):
+#         try:
+#             return ShipmentDetails.objects.get(pk=pk)
+#         except ShipmentDetails.DoesNotExist:
+#             raise Http404
+#
+#     def get(self, request, pk, format=None):
+#         address_details = self.get_object(pk)
+#         serializer = ShipmentDetailsSerializer(address_details)
+#         return Response(serializer.data)
+#
+#     def put(self, request, pk, format=None):
+#         address_details = self.get_object(pk=pk)
+#         serializer = ShipmentDetailsSerializer(address_details, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#     def delete(self, request, pk, format=None):
+#         address_details = self.get_object(pk=pk)
+#         address_details.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def get(self, request, format=None):
-        address_details = ShipmentDetails.objects.all()
-        serializer = AddressDetailsSerializer(address_details, many=True)
-        return Response(serializer.data)
+class ShipmentDetailsView(viewsets.ModelViewSet):
+    serializer_class = ShipmentDetailsSerializer
 
-    def post(self, request, format=None):
-        request.data.update({"qrCodeno": "https://www.valentinog.com/blog/drf-request/"})
-        serializer = AddressDetailsSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class AddressDetailsViewDetails(APIView):
-    def get_object(self, pk):
-        try:
-            return ShipmentDetails.objects.get(pk=pk)
-        except ShipmentDetails.DoesNotExist:
-            raise Http404
-
-    def get(self, request, pk, format=None):
-        address_details = self.get_object(pk)
-        serializer = AddressDetailsSerializer(address_details)
-        return Response(serializer.data)
-
-    def put(self, request, pk, format=None):
-        address_details = self.get_object(pk=pk)
-        serializer = AddressDetailsSerializer(address_details, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk, format=None):
-        address_details = self.get_object(pk=pk)
-        address_details.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def get_queryset(self):
+        shipment_details_obj = ShipmentDetails.objects.all()
+        return shipment_details_obj
 
 
 class ProductView(viewsets.ModelViewSet):
-    queryset = Package.objects.all()
     serializer_class = ProductSerializer
-    http_method_names = ['get', 'post']
 
     def get_queryset(self):
-        return Product.objects.all()
+        products = Product.objects.all()
+        return products
 
     def create(self, request, *args, **kwargs):
         serializer = ProductSerializer(data=request.data)
@@ -111,23 +113,25 @@ class PackageView(viewsets.ModelViewSet):
     serializer_class = PackageSerializer
 
     def get_queryset(self):
-        package = Package.objects.all()
-        return package
+        package_object = Package.objects.all()
+        return package_object
 
     def create(self, request, *args, **kwargs):
         data = request.data
 
-        new_package = Package.objects.create(package_type=data["package_type"],
-                                             destination=data["destination"]
+        new_package = Package.objects.create(package_name=data["package_name"],
+                                             package_type=data["package_type"],
+                                             sector=data["sector"],
+                                             shipment_details=ShipmentDetails.objects.get(
+                                                 shipment_name=data["shipment_name"])
                                              )
 
-        new_package.save()
-
         for product_store in data["product_store"]:
-            product_received = product_store["product"]["product_name"]
-            product_obj = Product.objects.get(product_name=product_received)  # Fix: ERROR 500
+            product_received = product_store["product_name"]
+            product_obj = Product.objects.get(product_name=product_received)
             new_package.products.add(product_obj, through_defaults={"quantity": product_store["quantity"]})
 
+        new_package.save()
         serializer = PackageSerializer(data=new_package)
         if serializer.is_valid():
             return Response(serializer.data)
@@ -146,8 +150,8 @@ class PackageView(viewsets.ModelViewSet):
         except KeyError:
             pass
 
-        package_obj.destination = data.get("destination", package_obj.destination)
-        package_obj.admition_date = datetime.datetime.now()
+        package_obj.sector = data.get("sector", package_obj.sector)
+        package_obj.addition_date = datetime.datetime.now()
         package_obj.status = data.get("status", package_obj.status)
 
         package_obj.save()
@@ -158,35 +162,30 @@ class PackageView(viewsets.ModelViewSet):
             return Response(serializer.errors)
 
 
-# ===========================================================================================
-# Examples
-class StudentsViewSet(viewsets.ModelViewSet):
-    serializer_class = StudentsSerializer
-
-    def get_queryset(self):
-        student = Students.objects.all()
-        return student
-
-    def create(self, request, *args, **kwargs):
-        data = request.data
-
-        new_student = Students.objects.create(
-            name=data["name"], age=data['age'], grade=data["grade"])
-
-        new_student.save()
-
-        for module in data["modules"]:
-            module_obj = Modules.objects.get(module_name=module["module_name"])
-            new_student.modules.add(module_obj)
-
-        serializer = StudentsSerializer(new_student)
-
-        return Response(serializer.data)
+class WorkerList(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    # permission_classes = [IsAdminUser]
 
 
-class ModulesViewSet(viewsets.ModelViewSet):
-    serializer_class = ModulesSerializer
+class WorkerDetails(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
-    def get_queryset(self):
-        module = Modules.objects.all()
-        return module
+
+class AllPackageInOneShipmentView(APIView):
+    def get_object(self, pk):
+        try:
+            return ShipmentDetails.objects.get(pk=pk)
+        except ShipmentDetails.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        shipment_obj = self.get_object(pk=pk)
+        shipment = shipment_obj.package_details.all()
+        serializer = AllPackageInOneShipmentSerializer(data=list(shipment), many=True)
+
+        if serializer.is_valid():
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
