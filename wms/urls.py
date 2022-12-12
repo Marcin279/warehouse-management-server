@@ -17,19 +17,20 @@ from django.urls import include, path
 from django.contrib import admin
 from rest_framework import routers
 from wms_api import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 router = routers.DefaultRouter()
 router.register('product', views.ProductView, basename="product")
 router.register('package/product', views.PackageView, basename="package/product")
 router.register("shipment", views.ShipmentDetailsView, basename="shipment")
+router.register("allworker", views.AllWorkerView, basename="allworker")
 
 urlpatterns = [
     path('admin', admin.site.urls),
     path('accounts/', include("django.contrib.auth.urls")),
     path('', include(router.urls)),
-    path('users/', views.WorkerList.as_view()),
-    path('users/<int:pk>/', views.WorkerDetails.as_view()),
-    path('shipment-details/<int:pk>/', views.AllPackageInOneShipmentView.as_view()),
-    # path('shipment-details/', views.ShipmentDetailsView.as_view()),
+    path('worker/', views.WorkerList.as_view()),
+    # path('worker/<int:pk>/', views.WorkerDetails.as_view()),
     # path('package/', views.PackageView.as_view())
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
