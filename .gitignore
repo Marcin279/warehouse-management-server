@@ -132,3 +132,7 @@ dmypy.json
 .pyre/
 
 .idea/
+
+/media
+media/
+migrations/
