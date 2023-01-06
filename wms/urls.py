@@ -19,12 +19,16 @@ from rest_framework import routers
 from wms_api import views
 from django.conf import settings
 from django.conf.urls.static import static
+# from rest_framework_jwt.views import obtain_jwt_token
+
 
 router = routers.DefaultRouter()
 router.register('product', views.ProductView, basename="product")
 router.register('package/product', views.PackageView, basename="package/product")
 router.register("shipment", views.ShipmentDetailsView, basename="shipment")
 router.register("allworker", views.AllWorkerView, basename="allworker")
+router.register("warehouse", views.WarehouseView, basename='warehouse')
+router.register("warehouse-stock", views.WarehouseStockView, basename='warehouse')
 
 urlpatterns = [
     path('admin', admin.site.urls),
@@ -33,4 +37,5 @@ urlpatterns = [
     path('worker/', views.WorkerList.as_view()),
     # path('worker/<int:pk>/', views.WorkerDetails.as_view()),
     # path('package/', views.PackageView.as_view())
+    # url(r'')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

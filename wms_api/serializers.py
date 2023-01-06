@@ -21,6 +21,7 @@ class WorkerCustomSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source='owner.first_name')
     last_name = serializers.CharField(source='owner.last_name')
     email = serializers.CharField(source='owner.email')
+    role = serializers.CharField(default=Worker.worker)
 
     class Meta:
         model = Worker
@@ -30,23 +31,15 @@ class WorkerCustomSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ('username', 'first_name', 'first_name', 'last_name', 'email', 'is_staff', 'is_active')
 
 
 class AllWorkerSerializer(serializers.ModelSerializer):
-    workers = UserSerializer()
+    owner = UserSerializer()
 
     class Meta:
         model = Worker
-        fields = ('workers', 'role')
-
-
-# class WorkerSerializer(serializers.ModelSerializer):
-#     workers = serializers.PrimaryKeyRelatedField(many=True, queryset=Worker.objects.all())
-#
-#     class Meta:
-#         model = User
-#         fields = ['id', 'username', 'first_name', 'last_name', 'email', 'workers']
+        fields = ('owner', 'role')
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -57,11 +50,15 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class ProductStoreSerializer(serializers.ModelSerializer):
     product = ProductSerializer(many=False)  # TODO: DELETE
-    date_creation = serializers.DateTimeField(default=datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
+    date_creation = serializers.SerializerMethodField(method_name='valid_date')
 
     class Meta:
         model = ProductStore
         fields = ['product', 'date_creation', 'quantity']
+
+    def valid_date(self, obj):
+        obj.date_creation = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+        return obj.date_creation
 
 
 class ShipmentDetailsSerializer(serializers.ModelSerializer):
@@ -73,21 +70,17 @@ class ShipmentDetailsSerializer(serializers.ModelSerializer):
 
 class PackageSerializer(serializers.ModelSerializer):
     product_store = ProductStoreSerializer(many=True, source='productstore_set')
-    addition_date = serializers.DateTimeField(default=datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
-    shipment_details = ShipmentDetailsSerializer()  # TODO: New ADD
+    addition_date = serializers.SerializerMethodField(method_name='valid_date')
+    shipment_details = ShipmentDetailsSerializer()
 
     class Meta:
         model = Package
         fields = ('id', 'package_name', 'package_type', 'qr_code', 'addition_date', 'sector', 'status',
                   'product_store', 'shipment_details')
 
-    # # TODO Sprawdź czy ta metoda jest potrzeba
-    # def create(self, validated_data):
-    #     product_data = validated_data.pop('product_store')
-    #     shipment_data = validated_data.pop('shipment_details')
-    #     package = Package.objects.create(**validated_data)
-    #     for product in product_data:
-    #         product = Product.objects.get()
+    def valid_date(self, obj):
+        obj.date_creation = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+        return obj.date_creation
 
 
 class AllPackageInOneShipmentSerializer(serializers.ModelSerializer):
@@ -98,22 +91,18 @@ class AllPackageInOneShipmentSerializer(serializers.ModelSerializer):
         fields = ('id', 'package_name', 'package_type', 'qr_code', 'addition_date', 'sector', 'status')
 
 
-class WarehouseSerializer(serializers.ModelSerializer):
-    products = ProductSerializer(many=True)
-
-    class Meta:
-        model = Warehouse
-        fields = ('warehouse_name', 'worker.owner.username', 'worker.owner.first_name', 'worker.owner.last_name',
-                  'worker.owner.email', 'products')
-
-
 class WarehouseStockSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(many=False)
+
     class Meta:
         model = WarehouseStock
         fields = ('warehouse', 'product', 'product_quantity')
 
 
-class ProductStockSerializer(serializers.ModelSerializer):
+class WarehouseSerializer(serializers.ModelSerializer):
+    warehouse_stock = WarehouseStockSerializer(many=True, source='warehousestock_set')
+    worker = AllWorkerSerializer(many=False)
+
     class Meta:
-        model = ProductStoreSerializer
-        fields = '__all__'
+        model = Warehouse
+        fields = ('warehouse_name', 'warehouse_stock', 'worker')

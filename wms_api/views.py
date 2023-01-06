@@ -1,6 +1,9 @@
 import datetime
+import http.client
+
 from django.contrib.auth.models import User
 from django.http import Http404
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status, viewsets, generics, serializers
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
@@ -9,12 +12,12 @@ from rest_framework.views import APIView
 from wms_api.models import (Product,
                             Package,
                             ProductStore,
-                            ShipmentDetails, Warehouse, Worker)
+                            ShipmentDetails, Warehouse, Worker, WarehouseStock)
 from wms_api.serializers import (
     ProductSerializer,
     PackageSerializer,
     ShipmentDetailsSerializer, AllPackageInOneShipmentSerializer, WarehouseSerializer,
-    WorkerCustomSerializer, AllWorkerSerializer
+    WorkerCustomSerializer, AllWorkerSerializer, WarehouseStockSerializer
 )
 
 
@@ -117,12 +120,12 @@ class PackageView(viewsets.ModelViewSet):
         package_object = Package.objects.all()
         return package_object
 
+    # TODO: Solve serialization error
     def create(self, request, *args, **kwargs):
         data = request.data
 
         new_package = Package.objects.create(package_name=data["package_name"],
                                              package_type=data["package_type"],
-
                                              sector=data["sector"],
                                              shipment_details=ShipmentDetails.objects.filter(
                                                  shipment_name=data["shipment_name"]).first()
@@ -130,7 +133,7 @@ class PackageView(viewsets.ModelViewSet):
 
         for product_store in data["product_store"]:
             product_received = product_store["product_name"]
-            product_obj = Product.objects.get(product_name=product_received)
+            product_obj = Warehouse.objects.get(product_name=product_received)
             new_package.products.add(product_obj, through_defaults={"quantity": product_store["quantity"]})
 
         new_package.save()
@@ -165,15 +168,81 @@ class PackageView(viewsets.ModelViewSet):
             return Response(serializer.errors)  # TODO: Remove status
 
 
+class WarehouseView(viewsets.ModelViewSet):
+    serializer_class = WarehouseSerializer
+
+    def get_queryset(self):
+        warehouse_obj = Warehouse.objects.all()
+        return warehouse_obj
+
+    # TODO: Solve serialization error
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        if self.check_if_user_does_not_exist(data["worker_username"]):
+            return Response({"Message: User does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            user = User.objects.filter(username=data["worker_username"]).first()
+
+        if self.check_if_warehouse_does_not_exist(data["warehouse_name"]):
+            new_warehouse = Warehouse.objects.create(warehouse_name=data["warehouse_name"],
+                                                     worker=Worker.objects.get(owner=user))
+        else:
+            return Response({"Message: Warehouse already exists"}, status=status.HTTP_403_FORBIDDEN)
+
+        for warehouse_stock in data["warehouse_stock"]:
+            product_received = warehouse_stock["product_name"]
+            product_obj = Product.objects.filter(product_name=product_received).first()
+            new_warehouse.products.add(product_obj,
+                                       through_defaults={"product_quantity": warehouse_stock["product_quantity"]})
+
+        new_warehouse.save()
+        serializer = WarehouseSerializer(data=new_warehouse)
+
+        if serializer.is_valid():
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors)
+
+    def partial_update(self, request, *args, **kwargs):
+        warehouse = self.get_object()
+        data = request.data
+
+        for warehouse_stock in data["warehouse_stock"]:
+            product_received = warehouse_stock["product_name"]
+            product_object = Product.objects.filter(product_name=product_received).first()
+            warehouse.products.add(product_object,
+                                   through_defaults={"product_quantity": warehouse_stock["product_quantity"]})
+
+        warehouse.save()
+
+        serializer = WarehouseSerializer(data=warehouse)
+        if serializer.is_valid():
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors)
+
+    def check_if_warehouse_does_not_exist(self, warehouse_name: str) -> bool:
+        try:
+            warehouse = Warehouse.objects.get(warehouse_name=warehouse_name)
+            result = False
+        except ObjectDoesNotExist:
+            result = True
+        return result
+
+    def check_if_user_does_not_exist(self, username: str) -> bool:
+        try:
+            user = User.objects.get(username=username)
+            result = False
+        except ObjectDoesNotExist:
+            result = True
+        return result
+
+
 class WorkerList(generics.ListAPIView):
     queryset = Worker.objects.all()
     serializer_class = WorkerCustomSerializer
     # permission_classes = [IsAdminUser]
 
-
-# class WorkerDetails(generics.RetrieveAPIView):
-#     queryset = Worker.objects.all()
-#     serializer_class = WorkerCustomSerializer
 
 class AllWorkerView(viewsets.ModelViewSet):
     serializer_class = AllWorkerSerializer
@@ -181,6 +250,28 @@ class AllWorkerView(viewsets.ModelViewSet):
     def get_queryset(self):
         worker_object = Worker.objects.all()
         return worker_object
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        worker = User.objects.filter(username=data["username"])
+
+        if len(worker) == 0:  # If User Does Not Exist
+            user = User.objects.create(username=data["username"],
+                                       first_name=data["first_name"],
+                                       last_name=data['last_name'],
+                                       password=data["password"],
+                                       email=data['email'],
+                                       is_staff=False,
+                                       is_active=True,
+                                       is_superuser=False)
+            Worker.objects.create(owner=user, role=Worker.worker)
+
+            return Response({"Message: Worker account create correctly from user model"})
+        else:
+            # Worker.objects.create(owner=worker.first(), role=Worker.worker)
+
+            return Response({"Message: User already exist"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class AllPackageInOneShipmentView(APIView):
@@ -201,9 +292,14 @@ class AllPackageInOneShipmentView(APIView):
             return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
 
-class WarehouseView(viewsets.ModelViewSet):
-    serializer_class = WarehouseSerializer
+class WarehouseStockView(viewsets.ModelViewSet):
+    serializer_class = WarehouseStockSerializer
 
     def get_queryset(self):
-        warehouse_obj = Warehouse.objects.all()
-        return warehouse_obj
+        warehouse_stock = WarehouseStock.objects.all()
+        return warehouse_stock
+
+
+class DashboardView(APIView):
+    def get(self, request):
+        return Response({"Message": "True"})

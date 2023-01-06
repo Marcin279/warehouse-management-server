@@ -124,16 +124,23 @@ class ProductStore(models.Model):
 
 
 class Worker(models.Model):
+    worker = 'worker'
+    admin = 'admin'
+
+    ROLE_TYPES = [
+        (worker, 'worker'),
+        (admin, 'admin')
+    ]
     owner = models.OneToOneField('auth.User', related_name='workers', on_delete=models.CASCADE, primary_key=True)
-    role = models.CharField(max_length=30, null=True, blank=True)
+    role = models.CharField(max_length=30, choices=ROLE_TYPES, default=worker)
 
     def __str__(self):
-        return f"{self.owner.username}, {self.owner.first_name}, {self.owner.last_name}"
+        return f"{self.owner.username}, {self.owner.first_name}, {self.owner.last_name}, {self.role}"
 
 
 class Warehouse(models.Model):
     worker = models.ForeignKey(Worker, on_delete=models.CASCADE)
-    warehouse_name = models.CharField(max_length=15)
+    warehouse_name = models.CharField(max_length=15, unique=True)
     products = models.ManyToManyField(Product, through='WarehouseStock')
 
     def __str__(self):
