@@ -117,12 +117,20 @@ class PackageView(viewsets.ModelViewSet):
         package_object = Package.objects.all()
         return package_object
 
+    def check_enough_product_quantity(self, product_name, quantity_input):
+        if product_name.total_quantity >= quantity_input:
+            product_name.total_quantity = product_name.total_quantity - quantity_input
+            product_name.save(update_fields=['total_quantity'])
+            return quantity_input
+        else:
+            content = {"Message": "Not enough element in warehouse"}
+            return Response(content, status=status.HTTP_406_NOT_ACCEPTABLE)
+
     def create(self, request, *args, **kwargs):
         data = request.data
 
         new_package = Package.objects.create(package_name=data["package_name"],
                                              package_type=data["package_type"],
-
                                              sector=data["sector"],
                                              shipment_details=ShipmentDetails.objects.filter(
                                                  shipment_name=data["shipment_name"]).first()
@@ -131,7 +139,8 @@ class PackageView(viewsets.ModelViewSet):
         for product_store in data["product_store"]:
             product_received = product_store["product_name"]
             product_obj = Product.objects.get(product_name=product_received)
-            new_package.products.add(product_obj, through_defaults={"quantity": product_store["quantity"]})
+            quantity_current = self.check_enough_product_quantity(product_obj, product_store["quantity"])
+            new_package.products.add(product_obj, through_defaults={"quantity": quantity_current})
 
         new_package.save()
         serializer = PackageSerializer(data=new_package)
@@ -139,7 +148,7 @@ class PackageView(viewsets.ModelViewSet):
         if serializer.is_valid():
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response(serializer.errors)  # TODO: Remove status
+            return Response(serializer.errors)
 
     def partial_update(self, request, *args, **kwargs):
         package_obj = self.get_object()
@@ -148,7 +157,7 @@ class PackageView(viewsets.ModelViewSet):
         try:
             for product_store in data["product_store"]:
                 product_received = product_store["product"]["product_name"]
-                product_obj = Product.objects.get(product_name=product_received)  # Fix: ERROR 500
+                product_obj = Product.objects.get(product_name=product_received)
                 package_obj.products.add(product_obj, through_defaults={"quantity": product_store["quantity"]})
         except KeyError:
             pass

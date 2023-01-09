@@ -49,6 +49,7 @@ class Product(models.Model):
     # QR_code = models.URLField(max_length=255, default="https://www.google.pl/")
     category = models.CharField(max_length=30, default='Phones')
     QR_code = models.ImageField(blank=True, upload_to='product_qr_code')
+    total_quantity = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.product_name

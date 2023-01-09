@@ -52,7 +52,7 @@ class AllWorkerSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ('product_name', 'product_type', 'QR_code', 'category')
+        fields = ('product_name', 'product_type', 'QR_code', 'category', 'total_quantity')
 
 
 class ProductStoreSerializer(serializers.ModelSerializer):
@@ -80,14 +80,6 @@ class PackageSerializer(serializers.ModelSerializer):
         model = Package
         fields = ('id', 'package_name', 'package_type', 'qr_code', 'addition_date', 'sector', 'status',
                   'product_store', 'shipment_details')
-
-    # # TODO Sprawdź czy ta metoda jest potrzeba
-    # def create(self, validated_data):
-    #     product_data = validated_data.pop('product_store')
-    #     shipment_data = validated_data.pop('shipment_details')
-    #     package = Package.objects.create(**validated_data)
-    #     for product in product_data:
-    #         product = Product.objects.get()
 
 
 class AllPackageInOneShipmentSerializer(serializers.ModelSerializer):
