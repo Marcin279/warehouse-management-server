@@ -9,11 +9,12 @@ from rest_framework.views import APIView
 from wms_api.models import (Product,
                             Package,
                             ProductStore,
-                            ShipmentDetails)
+                            ShipmentDetails, Warehouse, Worker)
 from wms_api.serializers import (
     ProductSerializer,
     PackageSerializer,
-    ShipmentDetailsSerializer, UserSerializer, AllPackageInOneShipmentSerializer
+    ShipmentDetailsSerializer, AllPackageInOneShipmentSerializer, WarehouseSerializer,
+    WorkerCustomSerializer, AllWorkerSerializer
 )
 
 
@@ -121,9 +122,10 @@ class PackageView(viewsets.ModelViewSet):
 
         new_package = Package.objects.create(package_name=data["package_name"],
                                              package_type=data["package_type"],
+
                                              sector=data["sector"],
-                                             shipment_details=ShipmentDetails.objects.get(
-                                                 shipment_name=data["shipment_name"])
+                                             shipment_details=ShipmentDetails.objects.filter(
+                                                 shipment_name=data["shipment_name"]).first()
                                              )
 
         for product_store in data["product_store"]:
@@ -133,10 +135,11 @@ class PackageView(viewsets.ModelViewSet):
 
         new_package.save()
         serializer = PackageSerializer(data=new_package)
+
         if serializer.is_valid():
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response(serializer.errors)
+            return Response(serializer.errors)  # TODO: Remove status
 
     def partial_update(self, request, *args, **kwargs):
         package_obj = self.get_object()
@@ -157,20 +160,27 @@ class PackageView(viewsets.ModelViewSet):
         package_obj.save()
         serializer = PackageSerializer(data=package_obj)
         if serializer.is_valid():
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return Response(serializer.errors)
+            return Response(serializer.errors)  # TODO: Remove status
 
 
 class WorkerList(generics.ListAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+    queryset = Worker.objects.all()
+    serializer_class = WorkerCustomSerializer
     # permission_classes = [IsAdminUser]
 
 
-class WorkerDetails(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+# class WorkerDetails(generics.RetrieveAPIView):
+#     queryset = Worker.objects.all()
+#     serializer_class = WorkerCustomSerializer
+
+class AllWorkerView(viewsets.ModelViewSet):
+    serializer_class = AllWorkerSerializer
+
+    def get_queryset(self):
+        worker_object = Worker.objects.all()
+        return worker_object
 
 
 class AllPackageInOneShipmentView(APIView):
@@ -189,3 +199,11 @@ class AllPackageInOneShipmentView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class WarehouseView(viewsets.ModelViewSet):
+    serializer_class = WarehouseSerializer
+
+    def get_queryset(self):
+        warehouse_obj = Warehouse.objects.all()
+        return warehouse_obj
